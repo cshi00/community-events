@@ -769,6 +769,7 @@ def main():
         from_pt=args.from_pt,
     )
     pipeline_params = jax_utils.replicate(pipeline_params)
+    controlnet_params = jax_utils.replicate(controlnet_params)
     if jax.process_index() == 0:
         validation_rng, train_rngs = jax.random.split(rng)
         image_logs = log_validation(pipeline, pipeline_params, controlnet_params, tokenizer, args, validation_rng, weight_dtype)
