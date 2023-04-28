@@ -123,22 +123,6 @@ def log_validation(pipeline, pipeline_params, controlnet_params, tokenizer, args
             {"validation_image": validation_image, "images": images, "validation_prompt": validation_prompt}
         )
 
-    if args.report_to == "wandb":
-        formatted_images = []
-        for log in image_logs:
-            images = log["images"]
-            validation_prompt = log["validation_prompt"]
-            validation_image = log["validation_image"]
-
-            formatted_images.append(wandb.Image(validation_image, caption="Controlnet conditioning"))
-            for image in images:
-                image = wandb.Image(image, caption=validation_prompt)
-                formatted_images.append(image)
-
-        wandb.log({"validation": formatted_images})
-    else:
-        logger.warn(f"image logging not implemented for {args.report_to}")
-
     return image_logs
 
 
