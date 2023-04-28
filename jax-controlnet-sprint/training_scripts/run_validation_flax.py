@@ -111,7 +111,6 @@ def log_validation(pipeline, pipeline_params, controlnet_params, tokenizer, args
         images = pipeline(
             prompt_ids=prompt_ids,
             image=processed_image,
-            params=pipeline_params,
             prng_seed=prng_seed,
             num_inference_steps=50,
             jit=True,
