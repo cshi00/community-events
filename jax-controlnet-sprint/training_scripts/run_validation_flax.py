@@ -110,6 +110,7 @@ def log_validation(pipeline, pipeline_params, controlnet_params, tokenizer, args
         processed_image = shard(processed_image)
         images = pipeline(
             prompt_ids=prompt_ids,
+            params=pipeline_params,
             image=processed_image,
             prng_seed=prng_seed,
             num_inference_steps=50,
