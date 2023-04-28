@@ -76,13 +76,13 @@ def image_grid(imgs, rows, cols):
     return grid
 
 
-def log_validation(pipeline, pipeline_params, controlnet_params, tokenizer, args, weight_dtype):
+def log_validation(pipeline, pipeline_params, controlnet_params, tokenizer, args, rng, weight_dtype):
     logger.info("Running validation...")
 
     pipeline_params["controlnet"] = controlnet_params
 
     num_samples = jax.device_count()
-    prng_seed = jax.random.split(0, jax.device_count())
+    prng_seed = jax.random.split(rng, jax.device_count())
 
     if len(args.validation_image) == len(args.validation_prompt):
         validation_images = args.validation_image
@@ -770,7 +770,8 @@ def main():
     )
     pipeline_params = jax_utils.replicate(pipeline_params)
     if jax.process_index() == 0:
-        image_logs = log_validation(pipeline, pipeline_params, controlnet_params, tokenizer, args, weight_dtype)
+        validation_rng, train_rngs = jax.random.split(rng)
+        image_logs = log_validation(pipeline, pipeline_params, controlnet_params, tokenizer, args, validation_rng, weight_dtype)
     save_model_card(
                 1234,
                 image_logs=image_logs,
