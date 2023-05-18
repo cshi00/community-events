@@ -6,7 +6,7 @@ import jsonlines
 import numpy as np
 import requests
 from datasets import load_dataset
-from PIL import Image
+from PIL import Image, ImageStat
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument(
         "--cache_dir",
         type=str,
-        required=True,
+        required=False,
         help="The directory to store cache",
     )
     parser.add_argument(
@@ -50,42 +50,45 @@ def filter_function(example):
         return False
     if example["watermark_score"] > 0.4:
         return False
-    if example["aesthetic_score_laion_v2"] < 6.0:
+    if example["aesthetic_score_laion_v2"] < 5.5:
         return False
     return True
 
 
 def filter_dataset(dataset, max_train_samples):
-    small_dataset = dataset.select(range(max_train_samples)).filter(filter_function)
+    # small_dataset = dataset.select(range(max_train_samples)).filter(filter_function)
+    small_dataset = dataset.filter(filter_function)
     return small_dataset
 
 
 if __name__ == "__main__":
     args = parse_args()
-
+    dataset = load_dataset("parquet", cache_dir="/mnt/disks/persist", data_files={"train": "/mnt/disks/persist/data/raw/part-00000-17da4908-939c-46e5-91d0-15f256041956-c000.snappy.parquet"}, split="train")
     # load coyo-700
-    dataset = load_dataset(
-        "kakaobrain/coyo-700m",
-        cache_dir=args.cache_dir,
-        split="train",
-    )
+    #dataset = load_dataset(
+    #    "YiYiXu/coyo1m_subset",
+    #    cache_dir=args.cache_dir,
+    #    split="train",
+    #)
 
     # estimation the % of images filtered
-    filter_ratio = len(filter_dataset(dataset, 20000)) / 20000
+    #filter_ratio = len(filter_dataset(dataset, 20000)) / 20000
 
     # esimate max_train_samples based on
     #   (1) filter_ratio we calculuted with 20k examples
     #   (2) assumption that only 80% of the URLs are still valid
-    max_train_samples = int(args.max_train_samples / filter_ratio / 0.8)
+    #max_train_samples = int(args.max_train_samples / filter_ratio / 0.8)
 
     # filter dataset down to 1 million
-    small_dataset = filter_dataset(dataset, max_train_samples)
-
+    small_dataset = filter_dataset(dataset, 0)
     def preprocess_and_save(example):
         image_url = example["url"]
         try:
             # download original image
             image = Image.open(requests.get(image_url, stream=True, timeout=5).raw)
+            stat = ImageStat.Stat(image)
+            if len(stat.sum) == 1 or sum(stat.sum)/3 == stat.sum[0]: #check the avg with any element value
+                raise ValueError("Grayscale image")
             image_path = f"{args.train_data_dir}/images/{example['id']}.png"
             image.save(image_path)
 
